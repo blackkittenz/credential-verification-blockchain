@@ -137,51 +137,50 @@ export default function IssuerPortalPage() {
     });
   };
 
+  // Check permissions directly via read-only RPC (never blocks)
+  const checkAccountPermissions = async (addr: string) => {
+    try {
+      const roContract = getReadonlyContract();
+      const contractAdmin = await roContract.admin();
+      const userIsAdmin = contractAdmin.toLowerCase() === addr.toLowerCase();
+      setIsAdmin(userIsAdmin);
+
+      const userIsIssuer = await roContract.authorizedIssuers(addr);
+      setIsAuthorized(userIsIssuer || userIsAdmin);
+
+      const orgName = await roContract.issuerOrgNames(addr);
+      setIssuerOrgName(orgName || (userIsAdmin ? "Universitas Siliwangi (UNSIL) - Rektorat" : ""));
+
+      try {
+        const fallbackProvider = new ethers.JsonRpcProvider(DEFAULT_RPC_URL);
+        const bal = await fallbackProvider.getBalance(addr);
+        setBalance(Number(ethers.formatEther(bal)).toFixed(4));
+      } catch {}
+    } catch (e) {
+      console.warn("Direct RPC permission check notice:", e);
+    }
+  };
+
   // Connect Wallet
   const connectWallet = async () => {
     setIsConnecting(true);
     setWalletError(null);
     try {
-      const { signer, address, contract } = await getSignerContract();
-      setAccount(address);
-
-      try {
-        if (signer.provider) {
-          const bal = await signer.provider.getBalance(address);
-          setBalance(Number(ethers.formatEther(bal)).toFixed(4));
+      if (typeof window !== "undefined" && (window as any).ethereum) {
+        const accounts = await (window as any).ethereum.request({ method: "eth_requestAccounts" });
+        if (accounts && accounts.length > 0) {
+          const addr = accounts[0];
+          setAccount(addr);
+          await checkAccountPermissions(addr);
         }
-      } catch (balErr) {
-        console.warn("Balance fetch from signer failed, using direct RPC fallback:", balErr);
-        try {
-          const fallbackProvider = new ethers.JsonRpcProvider(DEFAULT_RPC_URL);
-          const bal = await fallbackProvider.getBalance(address);
-          setBalance(Number(ethers.formatEther(bal)).toFixed(4));
-        } catch {}
       }
 
-      // Check permissions
       try {
-        const contractAdmin = await contract.admin();
-        const userIsAdmin = contractAdmin.toLowerCase() === address.toLowerCase();
-        setIsAdmin(userIsAdmin);
-
-        const userIsIssuer = await contract.authorizedIssuers(address);
-        setIsAuthorized(userIsIssuer || userIsAdmin);
-
-        const orgName = await contract.issuerOrgNames(address);
-        setIssuerOrgName(orgName || (userIsAdmin ? "Universitas Siliwangi (UNSIL) - Rektorat" : ""));
-      } catch (permErr) {
-        console.warn("Permission check via signer failed, using readonly fallback:", permErr);
-        const roContract = getReadonlyContract();
-        const contractAdmin = await roContract.admin();
-        const userIsAdmin = contractAdmin.toLowerCase() === address.toLowerCase();
-        setIsAdmin(userIsAdmin);
-
-        const userIsIssuer = await roContract.authorizedIssuers(address);
-        setIsAuthorized(userIsIssuer || userIsAdmin);
-
-        const orgName = await roContract.issuerOrgNames(address);
-        setIssuerOrgName(orgName || (userIsAdmin ? "Universitas Siliwangi (UNSIL) - Rektorat" : ""));
+        const { address } = await getSignerContract();
+        setAccount(address);
+        await checkAccountPermissions(address);
+      } catch (signerErr: any) {
+        console.warn("Signer auto-switch notice:", signerErr);
       }
     } catch (err: any) {
       console.error("Wallet connection error:", err);
@@ -196,12 +195,33 @@ export default function IssuerPortalPage() {
       (window as any).ethereum
         .request({ method: "eth_accounts" })
         .then((accounts: string[]) => {
-          if (accounts.length > 0) connectWallet();
+          if (accounts && accounts.length > 0) {
+            setAccount(accounts[0]);
+            checkAccountPermissions(accounts[0]);
+          }
         })
         .catch(() => {});
 
-      (window as any).ethereum.on("accountsChanged", () => connectWallet());
-      (window as any).ethereum.on("chainChanged", () => connectWallet());
+      (window as any).ethereum.on("accountsChanged", (accounts: string[]) => {
+        if (accounts && accounts.length > 0) {
+          setAccount(accounts[0]);
+          checkAccountPermissions(accounts[0]);
+        } else {
+          setAccount(null);
+          setIsAuthorized(false);
+        }
+      });
+
+      (window as any).ethereum.on("chainChanged", () => {
+        if (typeof window !== "undefined" && (window as any).ethereum) {
+          (window as any).ethereum.request({ method: "eth_accounts" }).then((accs: string[]) => {
+            if (accs && accs.length > 0) {
+              setAccount(accs[0]);
+              checkAccountPermissions(accs[0]);
+            }
+          });
+        }
+      });
     }
   }, []);
 
