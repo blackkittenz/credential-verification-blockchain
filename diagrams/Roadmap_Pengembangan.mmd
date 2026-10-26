@@ -1,0 +1,44 @@
+graph TD
+    Start(["UNSIL VeriKredensial Roadmap<br>4 Fase Pengembangan"]) --> Phase1
+    
+    subgraph S1 [ ]
+        Phase1["FASE 1: Baseline Prototype & Security Audit<br>Status SELESAI (Q4 2026)<br>Hardhat Localhost (Chain ID 31337)<br>Node VPS 1 (PM2 Daemon + Cloudflare Tunnel)<br>Smart Contract CredentialVerificationV2.sol<br>Solidity ^0.8.24 + Paris EVM (200 Runs)<br>10 Custom Errors + O(1) Direct Mapping<br>Zero PII On-Chain (UU PDP No. 27/2022)<br>18 Automated Unit Tests Passing (100%)<br>7 Security Gates Remediated & Verified"]
+    end
+    
+    Phase1 --> M1["Milestone 1<br>Prototype Teruji & Tervalidasi"]
+    M1 --> Phase2
+    
+    subgraph S2 [ ]
+        Phase2["FASE 2: Standarisasi W3C VC & IPFS<br>Target Jangka Pendek (Q1 2027)<br>W3C Verifiable Credentials Data Model v2.0<br>Decentralized Identifiers: did:unsil<br>JSON-LD Cryptographic Proofs<br>IPFS Content-Addressed Storage (CIDv1)<br>Integrasi Dompet Digital Mobile (SSI Wallet)<br>Migrasi Testnet Sepolia / Arbitrum Sepolia"]
+    end
+    
+    Phase2 --> M2["Milestone 2<br>Kedaulatan Identitas (SSI)"]
+    M2 --> Phase3
+    
+    subgraph S3 [ ]
+        Phase3["FASE 3: Privacy & Zero-Knowledge Proofs<br>Target Jangka Menengah (Q2 2027)<br>zk-SNARKs Verifiable Blind Credentials<br>Sirkuit Circom + SnarkJS Verifier on EVM<br>Verifikasi Kelulusan Tanpa Buka Nomor Ijazah<br>ZK Range Proofs (Bukti IPK >= 3.50)<br>Layer-2 Rollup (Arbitrum One / Base)<br>Merkle Tree Batching (1.000 Ijazah per Root)"]
+    end
+    
+    Phase3 --> M3["Milestone 3<br>Enterprise Data Privacy"]
+    M3 --> Phase4
+    
+    subgraph S4 [ ]
+        Phase4["FASE 4: Konsorsium & Integrasi Nasional<br>Target Jangka Panjang (Q3-Q4 2027)<br>Aliansi Konsorsium Kampus LLDIKTI Wilayah IV<br>Multi-Validator Permissioned EVM Nodes<br>Integrasi Nasional PDDikti Kemendiktisaintek<br>Sertifikasi Balai Sertifikasi Elektronik (BSrE)<br>Transfer Kredit Otomatis MBKM Antar-Kampus"]
+    end
+    
+    Phase4 --> EndNode(["Kesiapan Skala Konsorsium Nasional"])
+
+    %% Style Definitions
+    style Start fill:#E8E2FF,stroke:#7C4DFF,stroke-width:2px,color:#1A1A1A
+    style EndNode fill:#E8E2FF,stroke:#7C4DFF,stroke-width:2px,color:#1A1A1A
+    
+    style Phase1 fill:#0D2E16,stroke:#00A843,stroke-width:3px,color:#FFFFFF
+    style M1 fill:#08071A,stroke:#6533FF,stroke-width:2px,color:#FFFFFF
+    
+    style Phase2 fill:#0A193B,stroke:#1A62FF,stroke-width:3px,color:#FFFFFF
+    style M2 fill:#08071A,stroke:#6533FF,stroke-width:2px,color:#FFFFFF
+    
+    style Phase3 fill:#210D3B,stroke:#9B26FF,stroke-width:3px,color:#FFFFFF
+    style M3 fill:#08071A,stroke:#6533FF,stroke-width:2px,color:#FFFFFF
+    
+    style Phase4 fill:#302507,stroke:#DDA100,stroke-width:3px,color:#FFFFFF
