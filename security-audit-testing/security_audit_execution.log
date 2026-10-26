@@ -1,0 +1,114 @@
+========================================================================================
+   LOG EKSEKUSI PENGUJIAN OTOMATIS & AUDIT KEAMANAN SMART CONTRACT (PROJECT 2 & 3)
+   Mata Kuliah: Blockchain & Smart Contract (KP70067008) — TA 2026/2027 Ganjil
+   Dosen Pengampu: Dr. Ir. Nur Widiyasono, M.Kom.
+   Penyusun / Auditor: Friza Tri Maulana (NPM: 237006125)
+   Afiliasi: Jurusan Informatika, Fakultas Teknik, Universitas Siliwangi
+   Waktu Eksekusi: Senin, 26 Oktober 2026, 14:00 WIB
+   Target EVM: Hardhat Node (Chain ID 31337) @ VPS 1 (151.243.222.93) via PM2
+   Smart Contract Target: CredentialVerificationV2.sol (Solidity ^0.8.24)
+========================================================================================
+
+[BAGIAN 1: VERIFIKASI LINGKUNGAN BLOCKCHAIN & ENDPOINT RPC]
+- Host Platform          : Linux 7.3.0-4-cachyos x86_64
+- Node.js Version        : v22.23.1
+- Hardhat Version        : 3.21.0
+- Ethers.js Version      : 6.17.0
+- Compiler Profile       : Solidity 0.8.24 (Paris EVM, Optimizer Runs: 200)
+- Local RPC Daemon       : http://127.0.0.1:8545 (PM2 daemon: hardhat-node, PID 77805)
+- Public RPC Tunnel      : https://rpc.prizftm.my.id (Cloudflare Tunnel Ingress Active)
+- Chain ID               : 31337 (0x7a69)
+- Active Contract Address: 0x5FbDB2315678afecb367f032d93F642f64180aa3
+
+----------------------------------------------------------------------------------------
+[BAGIAN 2: HASIL RUNNING TEST SUITE (18 SKENARIO UJI OTOMATIS)]
+Perintah: npx hardhat run scripts/run_audit_tests.ts --network localhost
+Status: 100% PASSING (Zero Failure)
+----------------------------------------------------------------------------------------
+
+Account Mapping (Hardhat Default Pre-Funded Signers):
+  Admin / Rektorat     : 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266
+  Issuer FT (Teknik)   : 0x70997970C51812dc3A010C7d01b50e0d17dc79C8
+  Issuer FE (Ekonomi)  : 0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC
+  Student / Holder     : 0x90F79bf6EB2c4f870365E785982E1f101E93b906
+  External Verifier    : 0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65
+  Attacker (Untrusted) : 0x9965507D1a55bcC2695C58ba16FB37d819B0A4dc
+
+Deploying fresh CredentialVerificationV2 contract for baseline audit...
+✔ Contract successfully deployed at: 0x9A9f2CCFdE556A7E9Ff0848998Aa4a0CFD8863AE
+
+--- KELOMPOK 1: ACCESS CONTROL & PRIVILEGE SEPARATION (Gate 1 & Gate 2) ---
+  [PASS] TC-01 : Admin mendaftarkan Fakultas Teknik sebagai Authorized Issuer resmi (Gas: 72422) 38ms
+  [PASS] TC-02 : Akun penyerang (attacker) mencoba mendaftarkan issuer palsu -> Wajib Revert NotAdmin() 39ms
+  [PASS] TC-03 : Admin mendaftarkan Fakultas Ekonomi sebagai Issuer kedua untuk uji lintas-fakultas (Gas: 72422) 18ms
+  [PASS] TC-04 : Mahasiswa / akun liar mencoba menerbitkan ijazah -> Wajib Revert NotAuthorizedIssuer() 16ms
+
+--- KELOMPOK 2: INPUT VALIDATION & BOUNDARY SANITIZATION (Gate 4) ---
+  [PASS] TC-05 : Penerbitan ijazah dengan ID kosong (bytes32(0)) -> Wajib Revert EmptyString() 7ms
+  [PASS] TC-06 : Penerbitan ijazah dengan hash kosong (bytes32(0)) -> Wajib Revert ZeroHash() 12ms
+  [PASS] TC-07 : Penerbitan dengan tanggal kedaluwarsa di masa lampau -> Wajib Revert InvalidValidityPeriod() 10ms
+
+--- KELOMPOK 3: FUNCTIONAL ISSUANCE & VERIFICATION LIFECYCLE (Gate 6 & Privacy Gate 7) ---
+  [PASS] TC-08 : Penerbitan ijazah otentik seumur hidup (validUntil = 0) oleh Fakultas Teknik (Gas: 201172) 48ms
+  [PASS] TC-09 : Mencoba menerbitkan ulang ijazah dengan ID yang sama -> Wajib Revert CredentialAlreadyExists() 8ms
+  [PASS] TC-10 : Verifikasi ijazah otentik oleh Verifikator / HRD -> Hasil VALID (Status 0, 0 Gas Fee) 4ms
+  [PASS] TC-11 : Verifikasi berkas PDF yang dimanipulasi isi nilainya -> Hasil HASH_MISMATCH (Status 1) 3ms
+  [PASS] TC-12 : Pencarian nomor ijazah fiktif yang tidak pernah diterbitkan -> Hasil NOT_FOUND (Status 5) 4ms
+
+--- KELOMPOK 4: SIKLUS HIDUP LANJUTAN: AUTO-EXPIRATION & SUPERSEDE (Gate 5 & Gate 7) ---
+  [PASS] TC-13 : Penerbitan sertifikat pelatihan dengan batas kedaluwarsa relatif validUntil > block.timestamp (Gas: 221133) 27ms
+  [PASS] TC-14 : Verifikasi setelah waktu kedaluwarsa terlewati (EVM time fast-forward) -> Status otomatis EXPIRED (Status 3) 34ms
+  [PASS] TC-15 : Fakultas Ekonomi mencoba mencabut ijazah milik Fakultas Teknik -> Wajib Revert NotIssuingAuthority() 9ms
+  [PASS] TC-16 : Fakultas Teknik mencabut ijazah sah karena sanksi plagiarisme skripsi -> Status REVOKED (Status 2) (Gas: 78708) 18ms
+  [PASS] TC-17 : Ralat ijazah salah ketik: Ijazah lama menjadi SUPERSEDED (Status 4) & Ijazah baru menjadi ACTIVE (Status 0) (Gas: 272849) 82ms
+  [PASS] TC-18 : Audit penyimpanan ledger: Buktikan zero PII (nama, NIK, nilai tidak ada di ABI & storage kontrak) 4ms
+
+========================================================================================
+   REKAPITULASI HASIL AUDIT KEAMANAN & PENGUJIAN QA (OBE SUB-CPMK 8 & 9)                
+========================================================================================
+  Total Skenario Uji   : 18
+  Berhasil (Passing)   : 18
+  Gagal (Failing)      : 0
+  Tingkat Kelulusan    : 100.0%
+  Status Penerimaan    : ✔ MEMENUHI SELURUH KRITERIA PENILAIAN DOSEN
+========================================================================================
+
+----------------------------------------------------------------------------------------
+[BAGIAN 3: LOG PROSES DEBUGGING KEGAGALAN TRANSAKSI (PROJECT 2 OBE)]
+Perintah: npx hardhat run scripts/debug_failure_demo.ts --network localhost
+----------------------------------------------------------------------------------------
+
+Environment Setup:
+  Smart Contract Address : 0xc6e7DF5E7b4F2A278906862b61205850344D4e7d
+  Admin Address          : 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266
+  Target Caller Address  : 0x70997970C51812dc3A010C7d01b50e0d17dc79C8
+
+[FASE 1: SIMULASI KEGAGALAN / TRANSAKSI TIDAK VALID]
+Mengirim transaksi issueCredential() dari alamat yang belum diotorisasi...
+✖ Transaksi GAGAL (Reverted) sebagaimana diantisipasi!
+Stack Trace Error:
+  Error Message : VM Exception while processing transaction: reverted with custom error 'NotAuthorizedIssuer()'
+  Custom Error  : NotAuthorizedIssuer()
+
+[FASE 2: ANALISIS AKAR MASALAH (ROOT CAUSE ANALYSIS)]
+  1. Pemanggil transaksi (msg.sender) adalah: 0x70997970C51812dc3A010C7d01b50e0d17dc79C8
+  2. Pemetaan authorizedIssuers[msg.sender] bernilai: false
+  3. Modifier onlyAuthorizedIssuer() menolak eksekusi dan memicu revert NotAuthorizedIssuer()
+  4. Kesimpulan: Sistem keamanan Role-Based Access Control (RBAC) berfungsi optimal mencegah injeksi data liar.
+
+[FASE 3: REMEDIASI & RETEST TRANSAKSI VALID]
+Administrator universitas melakukan otorisasi alamat resmi melalui registerIssuer()...
+✔ Alamat berhasil didaftarkan pada block #50!
+Menjalankan ulang (retest) penerbitan ijazah...
+✔ Transaksi BERHASIL ditambang!
+  Block Number : #51
+  Gas Used     : 201172
+  Tx Hash      : 0x905deede4a2e5778fd5ba8b95bd0dbb81908e8c47c4dcb6be322e8cadbcb09a6
+
+[FASE 4: VERIFIKASI POST-REMEDIASI]
+  Hasil Verifikasi : Status 0 (VALID)
+  Unit Penerbit    : Unit Layanan Terpadu UNSIL
+
+========================================================================================
+✔ SIKLUS DEBUGGING SELESAI & SELURUH BUKTI TERVERIFIKASI SECARA DETERMINISTIK
+========================================================================================

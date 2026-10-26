@@ -18,18 +18,32 @@ Sistem Verifikasi Ijazah & Kredensial Akademik berbasis Smart Contract EVM (Soli
 
 ```text
 credential-verification-blockchain/
-├── credential/                 <- Berkas Smart Contract Solidity & Metadata Deployment
-│   ├── CredentialVerificationV2.sol  <- Smart Contract Solidity v0.8.24 (State Machine 5 status, Zero PII)
-│   └── deployed-contract.json        <- ABI resmi, alamat kontrak, dan metadata jaringan
-├── DApp/                       <- Web3 Frontend Application (Next.js 16 + React 19)
-│   ├── app/                    <- Next.js App Router (Portal Publik & Portal Penerbit /issuer)
-│   ├── contracts/              <- Salinan ABI & contract address untuk konektivitas frontend
-│   ├── lib/                    <- Logika Web3 ethers.js (contract.ts) & Web Crypto hashing (crypto.ts)
-│   ├── public/                 <- Aset logo resmi UNSIL dan grafis visual
-│   ├── .env.example            <- Contoh variabel lingkungan RPC & alamat kontrak
-│   ├── package.json            <- Dependensi frontend (ethers v6, lucide-react, tailwindcss v4)
-│   └── README.md               <- Petunjuk teknis khusus frontend DApp
-└── README.md                   <- Dokumentasi utama repositori
+├── credential/                         <- Berkas Smart Contract Solidity & Metadata Deployment (Gita)
+│   ├── CredentialVerificationV2.sol    <- Smart Contract Solidity v0.8.24 (State Machine 5 status, Zero PII)
+│   └── deployed-contract.json          <- ABI resmi, alamat kontrak, dan metadata jaringan
+│
+├── DApp/                               <- Web3 Frontend Application Next.js 16 (Zikri)
+│   ├── app/                            <- Next.js App Router (Portal Publik & Portal Penerbit /issuer)
+│   ├── contracts/                      <- Salinan ABI & contract address untuk konektivitas frontend
+│   ├── lib/                            <- Logika Web3 ethers.js (contract.ts) & Web Crypto hashing (crypto.ts)
+│   ├── public/                         <- Aset logo resmi UNSIL dan grafis visual
+│   ├── .env.example                    <- Contoh variabel lingkungan RPC & alamat kontrak
+│   ├── package.json                    <- Dependensi frontend (ethers v6, lucide-react, tailwindcss v4)
+│   └── README.md                       <- Petunjuk teknis khusus frontend DApp
+│
+├── security-audit-testing/             <- Modul Audit Keamanan & Automated Testing (Friza)
+│   ├── Security_Audit.pdf              <- Laporan Formal Security Audit (7 Halaman Standar Akademik)
+│   ├── CredentialVerification.test.ts  <- Automated Test Suite 18 Kasus Uji (Mocha & Chai / Hardhat)
+│   ├── debug_failure_demo.ts           <- Skrip Demonstrasi 4-Fase Debugging Kasus Transaksi Gagal
+│   ├── audit_7_gates_cli.ts            <- Skrip Audit Statis & Verifikasi 7 Gerbang Keamanan
+│   ├── security_audit_execution.log    <- Log Mentah Eksekusi CLI Terminal di Server VPS
+│   ├── evidence/                       <- Bukti Tangkapan Layar Asli Console CLI (Spectacle OS)
+│   │   ├── B01_hardhat_test_suite_18_passing.png <- Bukti [B-01]: 18 Skenario Uji Passing 100%
+│   │   ├── B02_debugging_failure_remediation.png <- Bukti [B-02]: 4 Fase Debugging & RCA
+│   │   └── B03_security_audit_7_gates.png        <- Bukti [B-03]: Remediasi 7 Celah Keamanan
+│   └── README.md                       <- Panduan teknis audit, STRIDE model, & matriks celah
+│
+└── README.md                           <- Dokumentasi utama repositori
 ```
 
 ---
@@ -79,8 +93,14 @@ Buka peramban di [http://localhost:3000](http://localhost:3000).
 
 ---
 
-## 🛡️ Fitur Kunci & Keamanan
-1. **Zero PII On-Chain (UU PDP No. 27/2022):** Berkas PDF fisik dan data pribadi mahasiswa (Nama, NIK, NIM, Nilai) tidak pernah diunggah atau disimpan di blockchain. Browser menghitung hash Keccak-256 secara lokal di memori klien.
-2. **Mesin Status 5 Siklus Hidup:** Membedakan secara presisi hasil verifikasi publik: `VALID`, `HASH_MISMATCH`, `REVOKED`, `EXPIRED`, `SUPERSEDED`, dan `NOT_FOUND`.
-3. **Pemberitahuan Instan 0 Gas:** Fungsi verifikasi bersifat `view` sehingga pihak ketiga (perusahaan rekruter / HRD) dapat memeriksa keaslian ijazah secara gratis tanpa memerlukan dompet kripto MetaMask.
-4. **Proteksi Akses Berlapis:** Transaksi penerbitan dan ralat dikunci menggunakan modifier `onlyAuthorizedIssuer` dan `nonReentrant`.
+## 🛡️ Ringkasan Audit Keamanan & Automated Testing (Project 2 & 3)
+* **Automated Unit Testing:** 18 dari 18 skenario uji lulus 100% (Zero Failure), mencakup skenario positif, penolakan pihak liar, uji batas zero-hash/empty-id, auto-expiration dinamis, dan penelusuran riwayat ralat (*superseding*).
+* **Mitigasi 7 Celah Keamanan Wajib:**
+  1. *Reentrancy:* Modifier `nonReentrant` mutex boolean.
+  2. *Access Control:* Strict Ownership Guard (`NotIssuingAuthority`).
+  3. *Front-Running:* Pemeriksaan atomik `CredentialAlreadyExists`.
+  4. *Denial of Service (DoS):* Migrasi 100% ke $O(1)$ Direct Mapping (`mapping(bytes32 => Credential)`).
+  5. *Input Validation:* Sanitasi ketat `EmptyString`, `ZeroHash`, dan `InvalidValidityPeriod`.
+  6. *Error Handling & Gas:* 10 Solidity Custom Errors (hemat gas ~40% saat revert).
+  7. *Oracle & Privacy Risk:* Zero Oracle Dependency + Zero PII On-Chain (UU PDP No. 27 Tahun 2022).
+* Rincian lengkap dan cara menjalankan ulang pengujian tersedia di folder [`security-audit-testing/`](./security-audit-testing/).
